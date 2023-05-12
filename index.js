@@ -4,25 +4,20 @@ const mongoose = require('mongoose');
 const cors = require('cors')
 require('dotenv').config()
 
-try {
+
   mongoose.connect(process.env.MONGO_URI)
-  console.log('MongoDB is Connected')
-} catch (e) {
-  console.log(e)
-}
+  .then(() => console.log('Connected'))
+  .catch(e => console.log(e));
 
 const UsersSchema = new mongoose.Schema({
   username: String
 })
 
 const ExerciseSchema = new mongoose.Schema({
-  _id: {
-    type: mongoose.ObjectId,
-    ref: 'User'
-  },
+  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   description: String,
   duration: Number,
-  date: Date
+  date: { type: Date, default: Date.now() }
 })
 
 const User = mongoose.model('User', UsersSchema)
@@ -41,8 +36,7 @@ app.post('/api/users', (req, res) => {
   const User1 = new User({
     username: req.body.username
   })
-  User1.save()
-  User.findOne({username: req.body.username}).then((user) => {
+  User1.save().then((user) => {
     res.json({
       username: user.username,
       _id: user._id
@@ -51,23 +45,32 @@ app.post('/api/users', (req, res) => {
 });
 
 app.get('/api/users', (req, res) => {
-  User.find({}).then((users) => {
-    res.json(users)
-  })
+    User.find({}).then((users) => {
+      res.json(users)
+    }).catch((err) => {
+      console.log(err)
+    })
 });
 
 app.post('/api/users/:_id/exercises', (req, res) => {
-  const Exercise1 = new Exercise({
-    _id: req.params._id,
+  const exercise = new Exercise({
+    user_id: req.params._id,
     description: req.body.description,
     duration: req.body.duration,
     date: req.body.date
   })
-  Exercise1.save()
-  
+  exercise.save().then((exercise) => {
+    User.findById(exercise.user_id).then((user) => {
+      res.json({
+        _id: exercise.user_id,
+        username: user.username,
+        description: exercise.description,
+        duration: exercise.duration,
+        date: exercise.date
+      })
+    })
+  })
 })
-
-
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
