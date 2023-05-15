@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const mongoose = require('mongoose');
-const cors = require('cors')
+const cors = require('cors');
 require('dotenv').config()
 
 
@@ -10,18 +10,19 @@ require('dotenv').config()
   .catch(e => console.log(e));
 
 const UsersSchema = new mongoose.Schema({
-  username: String
-})
+  username: String,
+  count: Number,
+  log: [
+    {
+      description: String,
+      duration: Number,
+      date: { type: Date, default: Date.now() }
+    }
+  ]
+});
 
-const ExerciseSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-  description: String,
-  duration: Number,
-  date: { type: Date, default: Date.now() }
-})
 
 const User = mongoose.model('User', UsersSchema)
-const Exercise = mongoose.model('Exercise', ExerciseSchema)
 
 app.use(cors())
 app.use(express.static('public'))
@@ -53,24 +54,27 @@ app.get('/api/users', (req, res) => {
 });
 
 app.post('/api/users/:_id/exercises', (req, res) => {
-  const exercise = new Exercise({
-    user_id: req.params._id,
+  let update = {
     description: req.body.description,
     duration: req.body.duration,
     date: req.body.date
-  })
-  exercise.save().then((exercise) => {
-    User.findById(exercise.user_id).then((user) => {
-      res.json({
-        _id: exercise.user_id,
-        username: user.username,
-        description: exercise.description,
-        duration: exercise.duration,
-        date: exercise.date
-      })
+  }
+
+  User
+    .findOneAndUpdate({_id: req.params._id}, {$push: {log: update}, $inc: {count: 1}}, {new: true})
+    .then((user) => {
+    res.json({
+      _id: user._id,
+      username: user.username,
+      description: user.log[0].description,
+      duration: user.log[0].duration,
+      date: user.log[0].date.toDateString()
     })
+  }).catch(err => {
+    console.log(err)
   })
 })
+
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
