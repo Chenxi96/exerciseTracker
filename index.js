@@ -16,7 +16,7 @@ const UsersSchema = new mongoose.Schema({
     {
       description: String,
       duration: Number,
-      date: { type: Date, default: Date.now() }
+      date: Date
     }
   ]
 });
@@ -66,12 +66,34 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     res.json({
       _id: user._id,
       username: user.username,
-      description: user.log[0].description,
-      duration: user.log[0].duration,
-      date: user.log[0].date.toDateString()
+      description: update.description,
+      duration: update.duration,
+      date: update.date? new Date(update.date).toDateString() : Date.now()
     })
   }).catch(err => {
     console.log(err)
+  })
+})
+
+app.get('/api/users/:_id/logs', (req, res) => {
+  User.findById(req.params._id).then(user => {
+    const logs = () => {
+      let log = []
+      for(let i=0; i<user.log.length; i++) {
+        log.push({
+          description: user.log[i].description,
+          duration: user.log[i].duration,
+          date: new Date(user.log[i].date).toDateString()
+        })
+      }
+      return log
+    }
+    res.json({
+      username: user.username,
+      _id: user._id,
+      count: user.count,
+      log: logs()
+    })
   })
 })
 
