@@ -57,18 +57,18 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   let update = {
     description: req.body.description,
     duration: req.body.duration,
-    date: req.body.date
+    date: update.date ? new Date(update.date).toDateString() : new Date().toDateString()
   }
 
   User
-    .findOneAndUpdate({_id: req.params._id}, {$push: {log: update}, $inc: {count: 1}}, {new: true})
+    .findOneAndUpdate({_id: req.params._id}, {$push: {log: req.body}, $inc: {count: 1}}, {new: true})
     .then((user) => {
     res.json({
       _id: user._id,
       username: user.username,
       description: update.description,
       duration: update.duration,
-      date: update.date? new Date(update.date).toDateString() : Date.now()
+      date: update.date ? new Date(update.date).toDateString() : new Date().toDateString()
     })
   }).catch(err => {
     console.log(err)
