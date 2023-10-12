@@ -5,9 +5,12 @@ const cors = require('cors');
 require('dotenv').config()
 
 
-  mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected'))
-  .catch(e => console.log(e));
+const connectMongoose = async () => {
+  await mongoose.connect(process.env.MONGO_URL, {dbName: process.env.DB_NAME})
+  .then(console.log('connected'))
+}
+
+connectMongoose()
 
 const UsersSchema = new mongoose.Schema({
   username: String,
